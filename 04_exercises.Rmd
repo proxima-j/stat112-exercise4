@@ -108,6 +108,7 @@ ggmap(world) +
     alpha = .3,
     size = .1
   ) +
+  labs(title ="Starbucks Locations In the World")+
   theme_map() +
   theme(legend.background = element_blank())
 ```
@@ -124,7 +125,8 @@ ggmap(TwinCities) +
   geom_point(data=Starbucks, 
              aes(x=Longitude,y=Latitude), 
              alpha=.4, size = .5,
-             color = "maroon4")
+             color = "maroon4")+
+  labs(title ="Starbucks Locations In the Twin Cities Metro Area")
 ```
 
   3. In the Twin Cities plot, play with the zoom number. What does it do?  (just describe what it does - don't actually include more than one map).  
@@ -142,7 +144,8 @@ ggmap(TwinCities2) +
   geom_point(data=Starbucks, 
              aes(x=Longitude,y=Latitude), 
              alpha=.4, size = .5,
-             color = "maroon4")
+             color = "maroon4")+
+  labs(title ="Starbucks Locations In the Twin Cities Metro Area")
 ```
 
   5. Add a point to the map that indicates Macalester College and label it appropriately. There are many ways you can do think, but I think it's easiest with the `annotate()` function (see `ggplot2` cheatsheet).
@@ -181,7 +184,8 @@ ggmap(TwinCities2) +
     hjust = -0.2,
     vjust = 0.2,
     color = "orange"
-  )
+  )+
+  labs(title ="Starbucks Locations In the Twin Cities Metro Area And MAC Location")
 ```
 
 ### Choropleth maps with Starbucks data (`geom_map()`)
@@ -189,7 +193,7 @@ ggmap(TwinCities2) +
 The example I showed in the tutorial did not account for population of each state in the map. In the code below, a new variable is created, `starbucks_per_10000`, that gives the number of Starbucks per 10,000 people. It is in the `starbucks_with_2018_pop_est` dataset.
 
 ```{r}
-census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_census_2018_state_pop_est.csv?dl=1") %>% 
+census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_census_2018_state_pop_est.csv?dl=1") %>%
   separate(state, into = c("dot","state"), extra = "merge") %>% 
   select(-dot) %>% 
   mutate(state = str_to_lower(state))
@@ -205,18 +209,46 @@ starbucks_with_2018_pop_est <-
 ```{r,eval=FALSE}
 census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_census_2018_state_pop_est.csv?dl=1") %>% #reads in the .csv file and assign it with a name called census_pop_est_2018 
   separate(state, into = c("dot","state"), extra = "merge") %>% 
-  #seperate the state column into  two new columns called "dot" and "state"
+  #separate the state column into  two new columns called "dot" and "state", extra="merge" enable the word after dot     become one column. For example, transform ".District of Columbia" into "." and "District of Columbia" instead of      "." , "District", "of" and "Columbia"
   select(-dot) %>% 
+  #delete the dot column
   mutate(state = str_to_lower(state))
+  #replace values in he original state column with the all lower case strings (since the name are the same)
 
 starbucks_with_2018_pop_est <-
+#assign the to the data we will be manipulate( starbucks_us_by_state), and call it "starbucks_with_2018_pop_est'
   starbucks_us_by_state %>% 
+  #pipe the data 
   left_join(census_pop_est_2018,
             by = c("state_name" = "state")) %>% 
+  #joining the dataset " starbucks_us_by_state" with "census_pop_est_2018' by state_name and state (which these two      columns contain the same values). left_join makes the output has all cases from the left, regardless if there is a    match in the right, but discards any cases in the right that do not have a match in the left.
   mutate(starbucks_per_10000 = (n/est_pop_2018)*10000)
+  #add a column showing that the number of Starbucks per 10,000 people
 ```
 
   7. Create a choropleth map that shows the number of Starbucks per 10,000 people on a map of the US. Use a new fill color, add points for all Starbucks in the US (except Hawaii and Alaska), add an informative title for the plot, and include a caption that says who created the plot (you!). Make a conclusion about what you observe.
+```{r}
+states_map <- map_data("state")
+starbucks_us_by_state2<- Starbucks %>% 
+  filter(Country == "US") %>% 
+  filter(!`State/Province` %in%c("AK", "HI"))
+
+starbucks_with_2018_pop_est  %>% 
+  ggplot() +
+  geom_map(map = states_map,
+           aes(map_id = state_name,
+               fill = n)) +
+  scale_fill_continuous(type = "viridis")+
+  geom_point(data = starbucks_us_by_state2,
+    aes(x = Longitude, y = Latitude),
+    alpha = .4,
+    size = .5,
+    color = "white"
+  )+
+  labs(title ="Starbucks Locations In the US and Density(per 10,000 people)")+
+  expand_limits(x = states_map$long, y = states_map$lat) + 
+  theme_map()
+```
 
 ### A few of your favorite things (`leaflet`)
 
