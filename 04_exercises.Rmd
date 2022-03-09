@@ -28,6 +28,7 @@ library(sf)            # for working with spatial data
 library(leaflet)       # for highly customizable mapping
 library(carData)       # for Minneapolis police stops data
 library(ggthemes)      # for more themes (including theme_map())
+library(htmltools)
 theme_set(theme_minimal())
 ```
 
@@ -229,38 +230,108 @@ starbucks_with_2018_pop_est <-
   7. Create a choropleth map that shows the number of Starbucks per 10,000 people on a map of the US. Use a new fill color, add points for all Starbucks in the US (except Hawaii and Alaska), add an informative title for the plot, and include a caption that says who created the plot (you!). Make a conclusion about what you observe.
 ```{r}
 states_map <- map_data("state")
-starbucks_us_by_state2<- Starbucks %>% 
-  filter(Country == "US") %>% 
-  filter(!`State/Province` %in%c("AK", "HI"))
+starbucks_us_by_state2 <- Starbucks %>%
+  filter(Country == "US") %>%
+  filter(!`State/Province` %in% c("AK", "HI"))
 
-starbucks_with_2018_pop_est  %>% 
+starbucks_with_2018_pop_est  %>%
   ggplot() +
   geom_map(map = states_map,
            aes(map_id = state_name,
-               fill = n)) +
-  scale_fill_continuous(type = "viridis")+
-  geom_point(data = starbucks_us_by_state2,
+               fill = starbucks_per_10000)) +
+  scale_fill_continuous(type = "viridis") +
+  geom_point(
+    data = starbucks_us_by_state2,
     aes(x = Longitude, y = Latitude),
     alpha = .4,
     size = .5,
     color = "white"
-  )+
-  labs(title ="Starbucks Locations In the US and Density(per 10,000 people)")+
-  expand_limits(x = states_map$long, y = states_map$lat) + 
-  theme_map()
+  ) +
+  labs(title = "Starbucks Locations In the US and Density(per 10,000 people)", fill = "Starbucks per 10,000 people") +
+  expand_limits(x = states_map$long, y = states_map$lat) +
+  theme_map()+
+  theme(legend.position = "right")
 ```
+
+>The rates of Starbucks per 10.000 people are relatively high on the west coast-- between 1.25 and 0.75-- whereas other states are relatively low--below 0.7 even o.5.
 
 ### A few of your favorite things (`leaflet`)
 
-  8. In this exercise, you are going to create a single map of some of your favorite places! The end result will be one map that satisfies the criteria below. 
-
-  * Create a data set using the `tibble()` function that has 10-15 rows of your favorite places. The columns will be the name of the location, the latitude, the longitude, and a column that indicates if it is in your top 3 favorite locations or not. For an example of how to use `tibble()`, look at the `favorite_stp_by_lisa` I created in the data R code chunk at the beginning.  
+  8. In this exercise, you are going to create a single map of some of your favorite places! The end result will be one map that satisfies the criteria below.
+  
+   * Create a data set using the `tibble()` function that has 10-15 rows of your favorite places. The columns will be the name of the location, the latitude, the longitude, and a column that indicates if it is in your top 3 favorite locations or not. For an example of how to use `tibble()`, look at the `favorite_stp_by_lisa` I created in the data R code chunk at the beginning.  
 
   * Create a `leaflet` map that uses circles to indicate your favorite places. Label them with the name of the place. Choose the base map you like best. Color your 3 favorite places differently than the ones that are not in your top 3 (HINT: `colorFactor()`). Add a legend that explains what the colors mean.  
   
   * Connect all your locations together with a line in a meaningful way (you may need to order them differently in the original data).  
   
-  * If there are other variables you want to add that could enhance your plot, do that now.  
+  * If there are other variables you want to add that could enhance your plot, do that now.
+```{r}
+favorite_stp_by_Jenny <- tibble(
+  place = c(
+    "Tokyo DisneySea",
+    "Magic Kingdom",
+    "Disneyland Paris",
+    "Eltz Castle",
+    "Disney California Adventure",
+    "The British Museum",
+    " Museo del Prado",
+    "Shanghai Disneyland",
+    "Hong Kong Disneyland",
+    "Rijksmuseum"
+  ),
+  long = c(
+    139.8698,
+    -81.5941,
+    2.7634,
+    7.33501,
+    -117.9262,
+    -0.62413, 
+    -3.69480,
+    121.6435,
+    114.0287,
+    4.29529
+  ),
+  lat = c(
+    35.6330,
+    28.4258,
+    48.8773,
+    50.20567,
+    33.80953,
+    53.58760,
+    40.41526,
+    31.1528,
+    22.3201,
+    52.09964
+  ),
+  top3 = c("yes", "yes", "yes", "no", "no", "no",
+           "no", "no", "no","no")
+)
+
+pal<-colorFactor(topo.colors(5), favorite_stp_by_Jenny$top3)
+
+leaflet(data = favorite_stp_by_Jenny) %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  addPolylines(lng = ~long, 
+               lat = ~lat, 
+               label = ~place,
+               weight = 2, 
+               opacity = .5, 
+               color = "darkgray") %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place, 
+             weight = 10, 
+             opacity = 1, 
+             color = ~pal(top3)) %>% 
+  addLegend(position = "bottomleft", 
+            pal = pal,
+            values = ~top3,
+             title = "Top 3 favorite places") %>% 
+  addMarkers(~long, ~lat, label = ~htmlEscape(place))
+```
+
+   
   
 ## Revisiting old datasets
 
