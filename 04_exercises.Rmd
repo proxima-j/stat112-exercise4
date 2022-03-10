@@ -468,19 +468,144 @@ cases_with_2018_pop_est %>%
 These exercises use the datasets `MplsStops` and `MplsDemo` from the `carData` library. Search for them in Help to find out more information.
 
   14. Use the `MplsStops` dataset to find out how many stops there were for each neighborhood and the proportion of stops that were for a suspicious vehicle or person. Sort the results from most to least number of stops. Save this as a dataset called `mpls_suspicious` and display the table.  
+```{r}
+mpls_suspicious<-MplsStops %>% 
+  group_by(neighborhood) %>% 
+  summarise(stopsNeighbothood=n(), prop_suspicious=mean(problem=="suspicious")) %>% 
+  arrange(desc(stopsNeighbothood))
+
+mpls_suspicious
+```
   
   15. Use a `leaflet` map and the `MplsStops` dataset to display each of the stops on a map as a small point. Color the points differently depending on whether they were for suspicious vehicle/person or a traffic stop (the `problem` variable). HINTS: use `addCircleMarkers`, set `stroke = FAlSE`, use `colorFactor()` to create a palette.  
+```{r}
+pal4<-colorFactor(topo.colors(5), MplsStops$problem)
+
+leaflet(data = MplsStops) %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  addCircleMarkers(lng = ~long, 
+             lat = ~lat, 
+             weight = 10, 
+             opacity = 1, 
+             stroke = FALSE,
+             color = ~pal4(problem))%>% 
+  addLegend(position = "bottomleft", 
+            pal = pal4,
+            values = ~problem,
+             title = "Type of Stops") 
+```
   
   16. Save the folder from moodle called Minneapolis_Neighborhoods into your project/repository folder for this assignment. Make sure the folder is called Minneapolis_Neighborhoods. Use the code below to read in the data and make sure to **delete the `eval=FALSE`**. Although it looks like it only links to the .sph file, you need the entire folder of files to create the `mpls_nbhd` data set. These data contain information about the geometries of the Minneapolis neighborhoods. Using the `mpls_nbhd` dataset as the base file, join the `mpls_suspicious` and `MplsDemo` datasets to it by neighborhood (careful, they are named different things in the different files). Call this new dataset `mpls_all`.
 
-```{r, eval=FALSE}
+```{r}
 mpls_nbhd <- st_read("Minneapolis_Neighborhoods/Minneapolis_Neighborhoods.shp", quiet = TRUE)
+
+mpls_all<-mpls_nbhd %>% 
+  left_join(mpls_suspicious, by=c("BDNAME"="neighborhood")) %>% 
+  left_join(MplsDemo, by=c("BDNAME"="neighborhood"))
 ```
 
   17. Use `leaflet` to create a map from the `mpls_all` data  that colors the neighborhoods by `prop_suspicious`. Display the neighborhood name as you scroll over it. Describe what you observe in the map.
+```{r}
+pal5 <- colorNumeric(palette = "Greens", domain = mpls_all$prop_suspicious)
+
+labels <- sprintf("<strong>%s</strong><br/>%g",
+                  mpls_all$BDNAME,
+                  mpls_all$prop_suspicious) %>% lapply(htmltools::HTML)
+
+leaflet(mpls_all) %>%
+  addProviderTiles(providers$CartoDB.DarkMatter) %>%
+  addProviderTiles(providers$Stamen.TonerLines,
+                   options = providerTileOptions(opacity = 0.35)) %>%
+  addProviderTiles(providers$Stamen.TonerLabels) %>%
+  addProviderTiles("MapBox",
+                   options = providerTileOptions(
+                     id = "mapbox.light",
+                     accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')
+                   )) %>%
+  addPolygons(
+    fillColor = ~ pal5(prop_suspicious),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    ),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto"
+    )
+  ) %>%
+  addLegend(
+    pal = pal5,
+    values = ~ prop_suspicious,
+    opacity = 0.7,
+    title = "Proportion of Stops For Suspicious",
+    position = "bottomright"
+  )
+```
+  
+> The bottom right conner (the South East) of Minneapolis seems to have a higher proporion of stops for suspicious due to it is darker than the other area in the map.
   
   18. Use `leaflet` to create a map of your own choosing. Come up with a question you want to try to answer and use the map to help answer that question. Describe what your map shows. 
   
+>Qestion: What is the poverty rate in each neighborhood?
+
+```{r}
+pal6 <- colorNumeric(palette = "YlOrRd", domain = mpls_all$poverty)
+
+labels <- sprintf("<strong>%s</strong><br/>%g",
+                  mpls_all$BDNAME,
+                  mpls_all$poverty) %>% lapply(htmltools::HTML)
+
+leaflet(mpls_all) %>%
+  addProviderTiles(providers$CartoDB.DarkMatter) %>%
+  addProviderTiles(providers$Stamen.TonerLines,
+                   options = providerTileOptions(opacity = 0.35)) %>%
+  addProviderTiles(providers$Stamen.TonerLabels) %>%
+  addProviderTiles("MapBox",
+                   options = providerTileOptions(
+                     id = "mapbox.light",
+                     accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')
+                   )) %>%
+  addPolygons(
+    fillColor = ~ pal6(poverty),
+    weight = 2,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    ),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto"
+    )
+  ) %>%
+  addLegend(
+    pal = pal5,
+    values = ~ poverty,
+    opacity = 0.7,
+    title = "Poverty Rate",
+    position = "bottomright"
+  )
+```
+
   
 ## GitHub link
 
