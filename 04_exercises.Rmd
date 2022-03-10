@@ -598,7 +598,7 @@ leaflet(mpls_all) %>%
     )
   ) %>%
   addLegend(
-    pal = pal5,
+    pal = pal6,
     values = ~ poverty,
     opacity = 0.7,
     title = "Poverty Rate",
@@ -606,10 +606,11 @@ leaflet(mpls_all) %>%
   )
 ```
 
+>The poverty rate overall is pretty low and average across Minneapolis. The North West might have a slightly higher poverty rate than South East.
   
 ## GitHub link
 
   19. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 04_exercises.Rmd, provide a link to the 04_exercises.md file, which is the one that will be most readable on GitHub.
-
+[Github Link](https://github.com/proxima-j/stat112-exercise4/blob/main/04_exercises.md)
 
 **DID YOU REMEMBER TO UNCOMMENT THE OPTIONS AT THE TOP?**
